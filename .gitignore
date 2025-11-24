@@ -1,0 +1,34 @@
+# Composer
+/vendor/
+/composer.lock
+
+# Symfony cache and logs
+/var/cache/
+/var/log/
+/var/sessions/
+
+# Environment files
+.env.local
+.env.*.local
+
+# IDEs
+/.idea/
+/*.iml
+/.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# PHPUnit coverage and logs
+phpunit.xml
+.phpunit.result.cache
+coverage/
+
+# Node / Frontend (если есть)
+/node_modules/
+/dist/
+/public/build/
+
+# Optional: sensitive configs
+config/spapi.php

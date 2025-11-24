@@ -1,0 +1,30 @@
+{
+  "name": "valigara/amazon-fba-shipping",
+  "description": "Amazon FBA Shipping Service Implementation",
+  "type": "library",
+  "require": {
+    "php": ">=8.1",
+    "guzzlehttp/guzzle": "^7.8",
+    "ext-json": "*",
+    "psr/log": "^3.0",
+    "symfony/dotenv": "^7.3"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.0",
+    "mockery/mockery": "^1.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit",
+    "demo": "php demo.php"
+  }
+}
