@@ -11,23 +11,32 @@
 
 ## Структура проекта
 ```
-src/
-├─ Data/
-│ ├─ AbstractOrder.php
-│ ├─ BuyerInterface.php
-│ ├─ Buyer.php
-│ └─ Order.php
+├─ .env
+├─ .git/
+├─ .gitignore
+├─ .phpunit.result.cache
+├─ composer.json
+├─ composer.lock
+├─ demo.php
+├─ example.php
+├─ phpunit.xml
+├─ README.md
 ├─ mock/
 │ ├─ buyer.29664.json
 │ └─ order.16400.json
-├─ Exceptions/
-│ └─ ShippingException.php
-├─ AmazonFbaShippingService.php
-└─ ShippingServiceInterface.php
-demo.php
-.env
-composer.json
-.gitignore
+├─ src/
+│ ├─ Data/
+│ │ ├─ AbstractOrder.php
+│ │ ├─ BuyerInterface.php
+│ │ ├─ Buyer.php
+│ │ └─ Order.php
+│ ├─ Exceptions/
+│ │ └─ ShippingException.php
+│ ├─ AmazonFbaShippingService.php
+│ └─ ShippingServiceInterface.php
+├─ tests/
+└─ vendor/
+
 ```
 
 - `mock` — содержит тестовые JSON-файлы для покупателя и заказа.
