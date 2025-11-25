@@ -18,7 +18,6 @@
 ├─ composer.json
 ├─ composer.lock
 ├─ demo.php
-├─ example.php
 ├─ phpunit.xml
 ├─ README.md
 ├─ mock/
