@@ -26,7 +26,7 @@ class AmazonSpApiClient
         $this->credentials = $credentials;
         $this->sandboxMode = $sandboxMode;
         $this->useMocks = $useMocks;
-        $this->apiEndpoint = $sandboxMode
+        $this->apiEndpoint = $this->sandboxMode
             ? 'https://sandbox.sellingpartnerapi-na.amazon.com'
             : 'https://sellingpartnerapi-na.amazon.com';
 

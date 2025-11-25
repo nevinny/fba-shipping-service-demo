@@ -3,56 +3,76 @@ declare(strict_types=1);
 
 namespace App;
 
-use App\Client\AmazonSpApiClient;
-use App\DTO\ShipmentRequest;
+use App\Data\AbstractOrder;
+use App\Data\BuyerInterface;
 use App\Exceptions\ShippingException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
-class AmazonFbaShippingService implements ShippingServiceInterface
+final class AmazonFbaShippingService implements ShippingServiceInterface
 {
-    private AmazonSpApiClient $apiClient;
     private LoggerInterface $logger;
 
-    public function __construct(
-        AmazonSpApiClient $apiClient,
-        ?LoggerInterface $logger = null
-    ) {
-        $this->apiClient = $apiClient;
+    public function __construct(?LoggerInterface $logger = null)
+    {
         $this->logger = $logger ?? new NullLogger();
     }
 
     /**
-     * Ship an order using Amazon FBA
+     * Ship an order using Amazon FBA (mock implementation)
      *
-     * @param string $orderId Seller's order identifier
-     * @param array $items Array of items to ship [['sku' => 'ABC123', 'quantity' => 2], ...]
-     * @param array $shippingAddress ['name', 'line1', 'city', 'state', 'postal_code', 'country']
+     * @param AbstractOrder $order
+     * @param BuyerInterface $buyer
      * @return string Tracking number
      * @throws ShippingException
      */
-    public function ship(string $orderId, array $items, array $shippingAddress): string
+    public function ship(AbstractOrder $order, BuyerInterface $buyer): string
     {
+        $order->load(); // загружаем данные заказа
+
+        if (empty($order->data)) {
+            throw new ShippingException('Order data is missing');
+        }
+
+        if (empty($buyer['shop_username'])) {
+            throw new ShippingException('Buyer data is missing');
+        }
+
         $this->logger->info('Starting FBA shipment process', [
-            'order_id' => $orderId,
-            'items_count' => count($items)
+            'order_id' => $order->getOrderId(),
         ]);
 
         try {
-            // Validate input
-            $this->validateShipmentData($orderId, $items, $shippingAddress);
+            // Извлекаем товары из заказа
+            $items = array_map(
+                fn($p) => ['sku' => $p['sku'], 'quantity' => (int)($p['ammount'] ?? 1)],
+                $order->data['products'] ?? []
+            );
 
-            // Create shipment request DTO
-            $shipmentRequest = new ShipmentRequest($orderId, $items, $shippingAddress);
+            if (empty($items)) {
+                throw new ShippingException('No items found in order');
+            }
 
-            // Call Amazon SP-API to create fulfillment order
-            $response = $this->apiClient->createFulfillmentOrder($shipmentRequest);
+            // Формируем адрес доставки
+            $shippingAddress = [
+                'name'        => $buyer['name'] ?? 'Unknown',
+                'line1'       => $this->extractLine1($buyer['address'] ?? ''),
+                'city'        => $this->extractCity($buyer['address'] ?? ''),
+                'state'       => $this->extractState($buyer['address'] ?? ''),
+                'postal_code' => $this->extractPostal($buyer['address'] ?? ''),
+                'country'     => $buyer['country_code'] ?? 'US'
+            ];
 
-            // Extract tracking number from response
-            $trackingNumber = $response->getTrackingNumber();
+            // В реальном сервисе здесь будет вызов API FBA
+            // Пока мок: генерируем трекинг
+            $trackingNumber = sprintf(
+                'AMZ-%s-%s',
+                substr((string)$order->getOrderId(), 0, 5),
+                strtoupper(bin2hex(random_bytes(3)))
+            );
 
             $this->logger->info('FBA shipment created successfully', [
-                'order_id' => $orderId,
+                'order_id' => $order->getOrderId(),
                 'tracking_number' => $trackingNumber
             ]);
 
@@ -60,44 +80,41 @@ class AmazonFbaShippingService implements ShippingServiceInterface
 
         } catch (\Exception $e) {
             $this->logger->error('FBA shipment failed', [
-                'order_id' => $orderId,
+                'order_id' => $order->getOrderId(),
                 'error' => $e->getMessage()
             ]);
 
             throw new ShippingException(
-                "Failed to ship order {$orderId}: " . $e->getMessage(),
+                "Failed to ship order {$order->getOrderId()}: " . $e->getMessage(),
                 0,
                 $e
             );
         }
     }
 
-    /**
-     * Validate shipment data
-     *
-     * @throws ShippingException
-     */
-    private function validateShipmentData(string $orderId, array $items, array $shippingAddress): void
+    private function extractLine1(string $address): string
     {
-        if (empty($orderId)) {
-            throw new ShippingException('Order ID cannot be empty');
-        }
+        $lines = explode("\n", $address);
+        return $lines[1] ?? $lines[0] ?? '';
+    }
 
-        if (empty($items)) {
-            throw new ShippingException('Items array cannot be empty');
-        }
+    private function extractCity(string $address): string
+    {
+        $lines = explode("\n", $address);
+        return $lines[2] ?? '';
+    }
 
-        foreach ($items as $item) {
-            if (!isset($item['sku']) || !isset($item['quantity'])) {
-                throw new ShippingException('Each item must have "sku" and "quantity"');
-            }
-        }
+    private function extractState(string $address): string
+    {
+        $lines = explode("\n", $address);
+        $parts = explode(' ', $lines[3] ?? '');
+        return $parts[0] ?? '';
+    }
 
-        $requiredAddressFields = ['name', 'line1', 'city', 'state', 'postal_code', 'country'];
-        foreach ($requiredAddressFields as $field) {
-            if (!isset($shippingAddress[$field]) || empty($shippingAddress[$field])) {
-                throw new ShippingException("Shipping address field '{$field}' is required");
-            }
-        }
+    private function extractPostal(string $address): string
+    {
+        $lines = explode("\n", $address);
+        $parts = explode(' ', $lines[3] ?? '');
+        return $parts[1] ?? '';
     }
 }
